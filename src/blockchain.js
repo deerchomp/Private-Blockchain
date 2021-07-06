@@ -68,15 +68,21 @@ class Blockchain {
             try {
                 block.time = new Date().getTime().toString().slice(0,-3);
                 block.height = self.chain.length;
-                if(self.chain.length > 0) {
+                if (self.chain.length > 0) {
                     block.previousBlockHash = self.chain[self.chain.length - 1].hash;
                 }
                 block.hash = SHA256(JSON.stringify(block)).toString();
                 self.chain.push(block);
+                //Update the height
                 self.height = self.chain.length;
+                //Check that the chain is valid before adding the block
                 let valid = await this.validateChain();
-                if(valid.length === 0) {
+                if (valid.length === 0) {
                     resolve(block);
+                }
+                else {
+                    console.log('Chain not validated successfully');
+                    reject(error);
                 }
             } catch (error) {
                 console.log('Unable to add block: chain is invalid.');
