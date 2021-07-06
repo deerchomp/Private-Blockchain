@@ -61,31 +61,27 @@ class Blockchain {
      * Note: the symbol `_` in the method name indicates in the javascript convention 
      * that this method is a private method. 
      */
-    _addBlock(block){
+
+     _addBlock(block) {
         let self = this;
         return new Promise(async (resolve, reject) => {
-            let chainHeight = await self.getChainHeight();
-
-            //ATTRIB LINES 71-76 CHECKING BLOCK HEIGHT TO ASSIGN previousBlockHash
-            //SARTHAK G @ UDACITY MENTOR
-            //https://knowledge.udacity.com/questions/626782
-            if(chainHeight >= 0) {
-                const prevBlock = await this.getBlockByHeight(this.height);
-                const previousBlockHash = prevBlock.hash;
-                block.previousBlockHash = previousBlockHash; 
-            }
-
-            block.time = new Date().getTime().toString().slice(0,-3);
-            block.hash = SHA256(JSON.stringify(block)).toString();
-            let valid = await self.validateChain();
-            if(valid.length === 0) {
-                //Chain successfully validated, add the block and update the
-                //chain heights.
-                this.chain.push(block);
-                block.height = chainHeight + 1;
-                this.height = block.height;
-                resolve(block);
-            }
+            try {
+                block.time = new Date().getTime().toString().slice(0,-3);
+                block.height = self.chain.length;
+                if(self.chain.length > 0) {
+                    block.previousBlockHash = self.chain[self.chain.length - 1].hash;
+                }
+                block.hash = SHA256(JSON.stringify(block)).toString();
+                self.chain.push(block);
+                self.height = self.chain.length;
+                let valid = await this.validateChain();
+                if(valid.length === 0) {
+                    resolve(block);
+                }
+            } catch (error) {
+                console.log('Unable to add block: chain is invalid.');
+                reject(error);
+            }          
         });
     }
 
@@ -128,7 +124,7 @@ class Blockchain {
            let currentTime = parseInt(new Date().getTime().toString().slice(0,-3));
            
            //5 * 60 seconds = 300
-           const MAX_TIME_ELAPSE = 30000;
+           const MAX_TIME_ELAPSE = 300;
 
            //Confirm time elapsed is not greater than 5 minutes
            if ((currentTime - time) <= MAX_TIME_ELAPSE) {
@@ -141,6 +137,7 @@ class Blockchain {
                        data: star
                    });
                    //Finally add the new block created
+                   console.log('adding block...');
                    await this._addBlock(block);
                    resolve(block);
                }
@@ -216,6 +213,7 @@ class Blockchain {
      * 1. You should validate each block using `validateBlock`
      * 2. Each Block should check the with the previousBlockHash
      */
+     
     validateChain() {
         let self = this;
         let errorLog = [];
@@ -242,5 +240,4 @@ class Blockchain {
         });
     }
 }
-
 module.exports.Blockchain = Blockchain;   
